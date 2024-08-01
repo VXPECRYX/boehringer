@@ -234,6 +234,27 @@ def main():
         pygame.display.flip()
         clock.tick(60)
 
+def game_start():
+    pygame.init()
+    width = 1600
+    height = 1200
+    screen = pygame.display.set_mode((width, height))
+    anfang(screen)
+
+    start = False
+    while not start:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                start = True
+
+    main()
+
+if __name__ == "__main__":
+    game_start()
+
     pygame.quit()
     sys.exit()
 
