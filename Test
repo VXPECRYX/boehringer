@@ -3,10 +3,10 @@ import sys
 import math
 import random
 
-
 def anfang(screen):
     startscreen = pygame.image.load("startscreen.png")
-    screen.blit(startscreen, (0,0))
+    screen.blit(startscreen, (0, 0))
+    pygame.display.update()
 
 def main():
     pygame.init()
@@ -21,7 +21,7 @@ def main():
     wave = 0
     count = 0
     wars = 0.01
-    lives = 4  
+    lives = 4
     leben = 4
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Running")
@@ -30,6 +30,8 @@ def main():
     bullets = []
     yellow_rects = []
     green_rects = []
+
+    anfang(screen)
 
     def draw(x, y, angle):
         half_size = square_size / 2
@@ -41,10 +43,10 @@ def main():
         for rect in green_rects:
             pygame.draw.rect(screen, (255, 0, 0), (rect[0], rect[1], 20, 20))
         points = [
-            (x + half_size * cos_angle - (half_size/2) * sin_angle, y + half_size * sin_angle + (half_size/2) * cos_angle),
-            (x - half_size * cos_angle - (half_size/2) * sin_angle, y - half_size * sin_angle + (half_size/2) * cos_angle),
-            (x - half_size * cos_angle + (half_size/2) * sin_angle, y - half_size * sin_angle - (half_size/2) * cos_angle),
-            (x + half_size * cos_angle + (half_size/2) * sin_angle, y + half_size * sin_angle - (half_size/2) * cos_angle)
+            (x + half_size * cos_angle - (half_size / 2) * sin_angle, y + half_size * sin_angle + (half_size / 2) * cos_angle),
+            (x - half_size * cos_angle - (half_size / 2) * sin_angle, y - half_size * sin_angle + (half_size / 2) * cos_angle),
+            (x - half_size * cos_angle + (half_size / 2) * sin_angle, y - half_size * sin_angle - (half_size / 2) * cos_angle),
+            (x + half_size * cos_angle + (half_size / 2) * sin_angle, y + half_size * sin_angle - (half_size / 2) * cos_angle)
         ]
         pygame.draw.polygon(screen, (255, 255, 0), points)
         pygame.display.flip()
@@ -130,12 +132,11 @@ def main():
         for rect in yellow_rects:
             rect[0] = annähere_an_wert(rect[0], x, 1)
             rect[1] = annähere_an_wert(rect[1], y, 1)
-        screen.fill((0, 0, 0)) 
+        screen.fill((0, 0, 0))
 
         bullets_to_remove = []
         yellow_rects_to_remove = []
         green_rects_to_remove = []
-
 
         for bullet in bullets:
             bullet[0] += bullet[2]
@@ -150,7 +151,7 @@ def main():
                         yellow_rects_to_remove.append(rect)
                         count += 1
                         collision_detected = True
-                        break  
+                        break
                 if not collision_detected:
                     for rect in green_rects:
                         if check_collision(bullet, rect):
@@ -159,9 +160,8 @@ def main():
                             lives += 1
                             if lives > leben:
                                 lives = leben
-                            break  
+                            break
                 pygame.draw.circle(screen, (255, 0, 0), (int(bullet[0]), int(bullet[1])), 5)
-
 
         for bullet in bullets_to_remove:
             if bullet in bullets:
@@ -185,7 +185,6 @@ def main():
         elif count == 3000:
             wave += 1
 
-
         if wave == 1:
             wars = 0.1
         if wave == 2:
@@ -198,13 +197,13 @@ def main():
             wars = 0.3
         for rect in yellow_rects:
             if check_player_collision(x, y, rect):
-                lives -= 1  
-                yellow_rects.remove(rect)  
+                lives -= 1
+                yellow_rects.remove(rect)
                 if lives <= 0:
                     ends = True
         if ends:
             endscreen(count)
-            ends = False  
+            ends = False
         mouse_x, mouse_y = pygame.mouse.get_pos()
         angle = math.atan2(mouse_y - y, mouse_x - x)
         with open("record.txt", "r") as file:
@@ -227,9 +226,8 @@ def main():
         pygame.draw.rect(screen, health_bar_color, (width - health_bar_length - 20, 20, health_bar_length * health_ratio, health_bar_height))
         draw(x, y, angle)
 
-        if random.random() < wars: 
+        if random.random() < wars:
             spawn_yellow_rect()
-        
         elif random.random() < 0.0003:
             spawn_green_rect()
 
@@ -240,10 +238,5 @@ def main():
     sys.exit()
 
 if __name__ == "__main__":
-    anfang(screen)
+    main()
 
-das ist der fehler code:
-
-  File "/home/student/test/running.py", line 243, in <module>
-    anfang()
-TypeError: anfang() missing 1 required positional argument: 'screen'
