@@ -3,6 +3,11 @@ import sys
 import math
 import random
 
+
+def anfang(screen):
+    startscreen = pygame.image.load("startscreen.png")
+    screen.blit(startscreen, (0,0))
+
 def main():
     pygame.init()
 
@@ -18,13 +23,10 @@ def main():
     wars = 0.01
     lives = 4  
     leben = 4
-
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Running")
     clock = pygame.time.Clock()
-
     pygame.font.init()
-
     bullets = []
     yellow_rects = []
     green_rects = []
@@ -33,22 +35,17 @@ def main():
         half_size = square_size / 2
         cos_angle = math.cos(angle)
         sin_angle = math.sin(angle)
-
         pygame.draw.rect(screen, (200, 200, 200), (x, y, 20, 20))
-
         for rect in yellow_rects:
             pygame.draw.rect(screen, (255, 255, 0), (rect[0], rect[1], 20, 20))
-
         for rect in green_rects:
             pygame.draw.rect(screen, (255, 0, 0), (rect[0], rect[1], 20, 20))
-
         points = [
             (x + half_size * cos_angle - (half_size/2) * sin_angle, y + half_size * sin_angle + (half_size/2) * cos_angle),
             (x - half_size * cos_angle - (half_size/2) * sin_angle, y - half_size * sin_angle + (half_size/2) * cos_angle),
             (x - half_size * cos_angle + (half_size/2) * sin_angle, y - half_size * sin_angle - (half_size/2) * cos_angle),
             (x + half_size * cos_angle + (half_size/2) * sin_angle, y + half_size * sin_angle - (half_size/2) * cos_angle)
         ]
-        
         pygame.draw.polygon(screen, (255, 255, 0), points)
         pygame.display.flip()
 
@@ -89,15 +86,12 @@ def main():
         ende = pygame.image.load("endscreen.png")
         screen.blit(ende, (0, 0))
         pygame.display.update()
-        
         with open("record.txt", "r") as file:
             rec = int(file.read().strip())
-        
         if count > rec:
             print(count)
             with open("record.txt", "w") as file:
                 file.write(str(count))
-        
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -113,7 +107,6 @@ def main():
 
     go = True
     ends = False
-
     while go:
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
@@ -122,12 +115,9 @@ def main():
             if pygame.mouse.get_pressed()[0]:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 shoot_bullet(x, y, mouse_x, mouse_y)
-
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-
         keys = pygame.key.get_pressed()
-
         if keys[pygame.K_a]:
             x -= speed
         if keys[pygame.K_d]:
@@ -140,13 +130,12 @@ def main():
         for rect in yellow_rects:
             rect[0] = annähere_an_wert(rect[0], x, 1)
             rect[1] = annähere_an_wert(rect[1], y, 1)
-
         screen.fill((0, 0, 0)) 
 
-        # Listen der zu entfernenden Objekte vorbereiten
         bullets_to_remove = []
         yellow_rects_to_remove = []
         green_rects_to_remove = []
+
 
         for bullet in bullets:
             bullet[0] += bullet[2]
@@ -154,21 +143,26 @@ def main():
             if bullet[0] < 0 or bullet[0] > width or bullet[1] < 0 or bullet[1] > height:
                 bullets_to_remove.append(bullet)
             else:
+                collision_detected = False
                 for rect in yellow_rects:
                     if check_collision(bullet, rect):
                         bullets_to_remove.append(bullet)
                         yellow_rects_to_remove.append(rect)
                         count += 1
-                for rect in green_rects:
-                    if check_collision(bullet, rect):
-                        bullets_to_remove.append(bullet)
-                        green_rects_to_remove.append(rect)
-                        lives += 1
-                        leben += 1
-
+                        collision_detected = True
+                        break  
+                if not collision_detected:
+                    for rect in green_rects:
+                        if check_collision(bullet, rect):
+                            bullets_to_remove.append(bullet)
+                            green_rects_to_remove.append(rect)
+                            lives += 1
+                            if lives > leben:
+                                lives = leben
+                            break  
                 pygame.draw.circle(screen, (255, 0, 0), (int(bullet[0]), int(bullet[1])), 5)
 
-        # Entfernen der markierten Objekte
+
         for bullet in bullets_to_remove:
             if bullet in bullets:
                 bullets.remove(bullet)
@@ -178,7 +172,6 @@ def main():
         for rect in green_rects_to_remove:
             if rect in green_rects:
                 green_rects.remove(rect)
-
         if count == 20:
             wave += 1
         elif count == 100:
@@ -192,6 +185,7 @@ def main():
         elif count == 3000:
             wave += 1
 
+
         if wave == 1:
             wars = 0.1
         if wave == 2:
@@ -202,29 +196,54 @@ def main():
             wars = 0.25
         if wave == 5:
             wars = 0.3
-
         for rect in yellow_rects:
             if check_player_collision(x, y, rect):
-                lives -= 1  # Reduziere die Leben des Spielers
-                yellow_rects.remove(rect)  # Entferne das gelbe Rechteck
+                lives -= 1  
+                yellow_rects.remove(rect)  
                 if lives <= 0:
                     ends = True
-
         if ends:
             endscreen(count)
-            ends = False  # Setze ends zurück, um das Spiel zu beenden
-
+            ends = False  
         mouse_x, mouse_y = pygame.mouse.get_pos()
         angle = math.atan2(mouse_y - y, mouse_x - x)
-
         with open("record.txt", "r") as file:
             recsbl = int(file.read().strip())
-
         if recsbl <= count:
             recsbl = count
-
         my_font = pygame.font.SysFont('Comic Sans MS', 30)
         text_surface = my_font.render('Wave: ' + str(wave), False, (255, 0, 0))
         text_surface1 = my_font.render('Count: ' + str(count), False, (255, 0, 0))
         text_surface2 = my_font.render('Record: ' + str(recsbl), False, (255, 0, 0))
-        text_surface3 = my_font.render('Leben: ' + str
+        text_surface3 = my_font.render('Leben: ' + str(lives), False, (255, 0, 0))
+        screen.blit(text_surface, (760, 20))
+        screen.blit(text_surface1, (760, 50))
+        screen.blit(text_surface2, (760, 80))
+        screen.blit(text_surface3, (1410, 90))
+        health_bar_length = 200
+        health_bar_height = 20
+        health_ratio = lives / leben
+        health_bar_color = (255 * (1 - health_ratio), 255 * health_ratio, 0)
+        pygame.draw.rect(screen, health_bar_color, (width - health_bar_length - 20, 20, health_bar_length * health_ratio, health_bar_height))
+        draw(x, y, angle)
+
+        if random.random() < wars: 
+            spawn_yellow_rect()
+        
+        elif random.random() < 0.0003:
+            spawn_green_rect()
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    anfang(screen)
+
+das ist der fehler code:
+
+  File "/home/student/test/running.py", line 243, in <module>
+    anfang()
+TypeError: anfang() missing 1 required positional argument: 'screen'
