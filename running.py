@@ -5,27 +5,71 @@ import random
 
 def anfang(screen):
     startscreen = pygame.image.load("startscreen.png")
+    startscreen = pygame.transform.scale(startscreen, screen.get_size())
     screen.blit(startscreen, (0, 0))
     pygame.display.update()
 
 def load_cursor():
     cursor_surface = pygame.image.load('gun-pointer.png')
     cursor_surface_32x32 = pygame.transform.scale(cursor_surface, (32, 32))
-    hotspot = (0, 0)  
+    hotspot = (0, 0)
     cursor = pygame.cursors.Cursor(hotspot, cursor_surface_32x32)
     pygame.mouse.set_cursor(cursor)
     pygame.display.flip()
+
+def show_pause_menu(screen, width, height):
+    font = pygame.font.Font(None, 72)
+    large_font = pygame.font.Font(None, 36)
+    
+    # Darken the screen
+    overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 128))
+    screen.blit(overlay, (0, 0))
+    
+    # Menu box
+    menu_box = pygame.Surface((400, 200))
+    menu_box.fill((50, 50, 50))
+    pygame.draw.rect(screen, (255, 255, 255), pygame.Rect((width // 2 - 200, height // 2 - 100), (400, 200)), 2)
+    screen.blit(menu_box, (width // 2 - 200, height // 2 - 100))
+    
+    # Menu text
+    title_text = font.render('Paused', True, (255, 255, 255))
+    continue_text = large_font.render('Continue', True, (255, 255, 255))
+    quit_text = large_font.render('Quit', True, (255, 255, 255))
+    
+    screen.blit(title_text, (width // 2 - title_text.get_width() // 2, height // 2 - 100 + 20))
+    screen.blit(continue_text, (width // 2 - continue_text.get_width() // 2, height // 2 - 100 + 80))
+    screen.blit(quit_text, (width // 2 - quit_text.get_width() // 2, height // 2 - 100 + 120))
+    
+    pygame.display.flip()
+    
+    menu_active = True
+    while menu_active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return  # Exit the pause menu
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if (width // 2 - 200 <= mouse_x <= width // 2 + 200) and (height // 2 - 100 + 80 <= mouse_y <= height // 2 - 100 + 80 + 36):
+                    menu_active = False
+                    return  # Continue the game
+                if (width // 2 - 200 <= mouse_x <= width // 2 + 200) and (height // 2 - 100 + 120 <= mouse_y <= height // 2 - 100 + 120 + 36):
+                    pygame.quit()
+                    sys.exit()  # Quit the game
 
 def main():
     pygame.init()
     pygame.mixer.init()
 
-    schiessen = pygame.mixer.Sound('shootsound.wav')
+    load_cursor()
 
-    width = 1600
-    height = 1200
-    x = 200
-    y = 200
+    width = pygame.display.Info().current_w
+    height = pygame.display.Info().current_h
+    x = width // 2
+    y = height // 2
     speed = 2
     boost_speed = 5
     square_size = 20
@@ -39,16 +83,13 @@ def main():
     boost_max = 200
     boost_recharge_time = 2000  
     last_boost_time = 0
-    screen = pygame.display.set_mode((width, height))
+    screen = pygame.display.set_mode((width, height), pygame.FULLSCREEN)
     pygame.display.set_caption("Running")
     clock = pygame.time.Clock()
     pygame.font.init()
     bullets = []
     yellow_rects = []
     green_rects = []
-
-    anfang(screen)
-    load_cursor()
 
     def draw(x, y, angle):
         half_size = square_size / 2
@@ -74,13 +115,34 @@ def main():
             pygame.draw.rect(screen, (255, 255, 0), (rect[0], rect[1], 20, 20))
             screen.blit(rekt1, (rect[0], rect[1]))
         
-
         boost_bar_length = 200
         boost_bar_height = 20
         boost_ratio = boost / boost_max
         boost_bar_color = (255 * (1 - boost_ratio), 255 * boost_ratio, 0)
         pygame.draw.rect(screen, boost_bar_color, (20, 20, boost_bar_length * boost_ratio, boost_bar_height))
         pygame.draw.rect(screen, (255, 255, 255), (20, 20, boost_bar_length, boost_bar_height), 2)
+        
+        with open("record.txt", "r") as file:
+            recsbl = int(file.read().strip())
+        if recsbl <= count:
+            recsbl = count
+    
+        # Display wave, count, and record in the center top
+        font = pygame.font.Font(None, 36)
+        wave_text = font.render(f"Wave: {wave}", True, (255, 255, 255))
+        count_text = font.render(f"Count: {count}", True, (255, 255, 255))
+        record_text = font.render(f"Record: {recsbl}", True, (255, 255, 255))
+        screen.blit(record_text, (width // 2 - record_text.get_width() // 2, 130))
+        screen.blit(count_text, (width // 2 - count_text.get_width() // 2, 50))
+        screen.blit(wave_text, (width // 2 - wave_text.get_width() // 2, 90))
+        
+        # Display lives in the top-right corner
+        pygame.draw.rect(screen, (0, 0, 0), (width - 220, 20, 200, 60))
+        pygame.draw.rect(screen, (255, 0, 0), (width - 220, 20, 200, 20))
+        pygame.draw.rect(screen, (0, 255, 0), (width - 220, 20, 200 * (lives / leben), 20))
+        
+        life_text = font.render(f"Lives: {lives}", True, (255, 255, 255))
+        screen.blit(life_text, (width - 200, 50))
         
         pygame.display.flip()
 
@@ -119,12 +181,12 @@ def main():
 
     def endscreen(count):
         ende = pygame.image.load("endscreen.png")
+        ende = pygame.transform.scale(ende, screen.get_size())
         screen.blit(ende, (0, 0))
         pygame.display.update()
         with open("record.txt", "r") as file:
             rec = int(file.read().strip())
         if count > rec:
-            print(count)
             with open("record.txt", "w") as file:
                 file.write(str(count))
         while True:
@@ -134,14 +196,13 @@ def main():
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
-                    if 690 <= mouse_x <= 890 and 851 <= mouse_y <= 921:
+                    if (0.43 * width) <= mouse_x <= (0.56 * width) and (0.52 * height) <= mouse_y <= (0.58 * height):
+                        main()
+                    elif (0.43 * width) <= mouse_x <= (0.56 * width) and (0.68 * height) <= mouse_y <= (0.76 * height):
                         pygame.quit()
                         sys.exit()
-                    elif 690 <= mouse_x <= 890 and 651 <= mouse_y <= 721:
-                        main()
 
     go = True
-    ends = False
     while go:
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
@@ -154,6 +215,10 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    show_pause_menu(screen, width, height)
+        
         if keys[pygame.K_SPACE] and boost > 0:
             current_speed = boost_speed
             boost -= 1
@@ -215,63 +280,46 @@ def main():
         for rect in green_rects_to_remove:
             if rect in green_rects:
                 green_rects.remove(rect)
-        
-        if count >= (wave + 1) * (20 + wave * 10):  
+
+        if count >= (wave + 1) * (wave * 3):  
             wave += 1
             for _ in range(wave * 5): 
                 spawn_yellow_rect()
             for _ in range(wave):  
                 spawn_green_rect()
 
+        if random.random() < wars:
+            spawn_yellow_rect()
+        if random.random() < 0.0003:
+            spawn_green_rect()
+
         for rect in yellow_rects:
             if check_player_collision(x, y, rect):
                 lives -= 1
-                yellow_rects.remove(rect)
                 if lives <= 0:
-                    ends = True
-        if ends:
-            endscreen(count)
-            ends = False
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        angle = math.atan2(mouse_y - y, mouse_x - x)
-        with open("record.txt", "r") as file:
-            recsbl = int(file.read().strip())
-        if recsbl <= count:
-            recsbl = count
-        my_font = pygame.font.SysFont('Comic Sans MS', 30)
-        text_surface = my_font.render('Wave: ' + str(wave), False, (255, 0, 0))
-        text_surface1 = my_font.render('Count: ' + str(count), False, (255, 0, 0))
-        text_surface2 = my_font.render('Record: ' + str(recsbl), False, (255, 0, 0))
-        text_surface3 = my_font.render('Leben: ' + str(lives), False, (255, 0, 0))
-        screen.blit(text_surface, (760, 20))
-        screen.blit(text_surface1, (760, 50))
-        screen.blit(text_surface2, (760, 80))
-        screen.blit(text_surface3, (1410, 90))
-        health_bar_length = 200
-        health_bar_height = 20
-        health_ratio = lives / leben
-        health_bar_color = (255 * (1 - health_ratio), 255 * health_ratio, 0)
-        pygame.draw.rect(screen, health_bar_color, (width - health_bar_length - 20, 20, health_bar_length * health_ratio, health_bar_height))
-        draw(x, y, angle)
+                    endscreen(count)
+                yellow_rects.remove(rect)
 
-        if random.random() < wars:
-            spawn_yellow_rect()
-        elif random.random() < 0.00003:
-            spawn_green_rect()
+        for rect in green_rects:
+            if check_player_collision(x, y, rect):
+                lives += 1
+                if lives > leben:
+                    lives = leben
+                green_rects.remove(rect)
 
+        draw(x, y, 0)
 
-
-        pygame.display.flip()
         clock.tick(60)
+        pygame.display.flip()
 
     pygame.quit()
     sys.exit()
 
 def game_start():
     pygame.init()
-    width = 1600
-    height = 1200
-    screen = pygame.display.set_mode((width, height))
+    width = pygame.display.Info().current_w
+    height = pygame.display.Info().current_h
+    screen = pygame.display.set_mode((width, height), pygame.FULLSCREEN)
     anfang(screen)
 
     start = False
@@ -282,13 +330,11 @@ def game_start():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                if 690 <= mouse_x <= 890 and 651 <= mouse_y <= 721:
+                if (0.43 * width) <= mouse_x <= (0.56 * width) and (0.52 * height) <= mouse_y <= (0.58 * height):
                     main()
-                elif 690 <= mouse_x <= 890 and 851 <= mouse_y <= 921:
-                        pygame.quit()
-                        sys.exit()
-
-
+                elif (0.43 * width) <= mouse_x <= (0.56 * width) and (0.68 * height) <= mouse_y <= (0.76 * height):
+                    pygame.quit()
+                    sys.exit()
 
 if __name__ == "__main__":
     game_start()
